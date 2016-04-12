@@ -12,7 +12,9 @@ import org.smart4j.framework.helper.ControllerHelper;
 import org.smart4j.framework.util.*;
 
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRegistration;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -90,6 +92,14 @@ public class DispatchServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        super.init(config);
+        HelperLoader.init();
+
+        ServletContext servletContext = config.getServletContext();
+
+        ServletRegistration jspServlet = servletContext.getServletRegistration("jsp");
+        jspServlet.addMapping(ConfigHelper.getAppJspPath() + "*");
+
+        ServletRegistration defaultServlet = servletContext.getServletRegistration("default");
+        defaultServlet.addMapping(ConfigHelper.getAppAssertPath() + "*");
     }
 }
