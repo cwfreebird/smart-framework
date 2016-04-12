@@ -6,10 +6,13 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Created by david.cai on 2016/4/6.
@@ -45,6 +48,23 @@ public class ClassUtil {
     }
 
     /**
+     * 加载类
+     * @param className
+     * @return
+     */
+    public static Class<?> loadClass(String className){
+        Class<?> clz = null;
+        try {
+            clz = Class.forName(className, true, getClassLoader());
+        } catch (ClassNotFoundException e) {
+            LOGGER.error("Class load failure", e);
+            throw new RuntimeException(e);
+        }
+
+        return clz;
+    }
+
+    /**
      * 获取指定包名下所有类
      * @param packageName
      * @return
@@ -61,13 +81,31 @@ public class ClassUtil {
                         String packagePath = url.getPath().replace("%20", " ");
                         addClass(classeSet, packagePath, packageName);
                     } else if ("jar".equals(protocol)){
+//TODO
+                        JarURLConnection jarURLConnection = (JarURLConnection) url.openConnection();
+                        if (jarURLConnection != null){
+                            JarFile jarFile = jarURLConnection.getJarFile();
+                            if (jarFile != null){
+                                Enumeration<JarEntry> jarEntries = jarFile.entries();
 
+                                while (jarEntries.hasMoreElements()){
+                                    JarEntry jarEntry = jarEntries.nextElement();
+                                    String jarEntryName = jarEntry.getName();
+                                    if (jarEntryName.endsWith(".class")){
+                                        String className = jarEntryName.substring(0, jarEntryName.lastIndexOf(".")).replace("/", ".");
+
+                                        doAddClass(classeSet, className );
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("get class set failure", e);
+            throw new RuntimeException(e);
         }
         return classeSet;
     }
